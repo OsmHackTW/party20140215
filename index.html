@@ -1,0 +1,68 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+        <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+        <script src="leaflet-osm.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <style>
+#map { height: 100%; width:100% }
+        </style>
+    </head>
+    <body>
+<div id="map"></div>
+<script>
+
+var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+var osmAttrib='Map data © OpenStreetMap and contributors';
+// var osm = new L.TileLayer(osmUrl, {minZoom: 10, maxZoom: 19, attribution: osmAttrib});		
+var osm = new L.OSM.CycleMap();
+
+// set up the map
+map = new L.Map('map');
+map.setView(new L.LatLng( 25.02561, 121.58632), 15);
+map.addLayer(osm);
+
+// timer
+var index = 0;
+
+  $.getJSON("20140215.json", function(data) {
+          length = data.length;
+          $.each(data, function(i, osc) { 
+//               console.log(i);
+//               console.log(osc.user_name);
+//               console.log(osc.changeset_id);
+//               console.log(osc.change_time);
+//               console.log(osc.comment);
+              });
+  })
+  .done(function( data ) {
+          updateChangeset(data,index);
+  }) 
+  .fail(function() {
+      console.log( "error" );
+  });
+
+function updateChangeset(data, index) {
+    var osc = data[index];
+    var popup = "<a href=\"http://www.openstreetmap.org/changeset/" + osc.changeset_id + "\" target=\"_blank\">" + osc.user_name + " - " + osc.comment + "</a>";
+    $.ajax({
+        url: "http://www.openstreetmap.org/api/0.6/changeset/" + osc.changeset_id + "/download",
+        dataType: "xml",
+        success: function (xml) {
+            var osclayer = new L.OSM.DataLayer(xml).addTo(map);
+            osclayer.bindPopup(popup).openPopup();
+            map.panInsideBounds(osclayer.getBounds());
+        }
+    });
+
+    if(index >= length) {
+        return;
+    } else {
+        index++;
+    }
+    setTimeout(function(){updateChangeset(data,index)}, 3000);
+};
+
+</script>
+    </body>
+</html>
